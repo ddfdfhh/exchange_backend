@@ -2475,7 +2475,7 @@ export class WalletController {
   async usdt_transfer(
     @Body() post: UsdtTransferDto,
   ): Promise<WithdrawlResponse> {
-    console.log('withdrww',post);
+    console.log('withdrww', post);
     const pk =
       'e546a9a18a291d4feb611b74be02a7390d6923323c61f787ba8a1f4ffb6b6305';
     try {
@@ -2500,10 +2500,6 @@ export class WalletController {
       let amount = ethers.utils.parseUnits(amount1, 18);
 
       if (Number(balanceInSymobl) < Number(amount1)) {
-         await this.dbService.saveError({
-                error: 'Insuffcient ',
-                from: 'USDT Withdrawal function',
-              } as ErrorSave);
         return {
           success: false,
           message: 'Insufficient Admin Amount',
