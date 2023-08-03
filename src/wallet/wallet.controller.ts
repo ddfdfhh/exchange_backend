@@ -312,7 +312,7 @@ export class WalletController {
           } as ErrorSave);
           const provider =
             network == 'BEP20' ? this.bscProvider : this.ethProvider;
-          current_block = provider.getBlockNumber();
+          current_block =await provider.getBlockNumber();
           console.log('providder prduced block number', current_block);
         }
         if (!current_block) {
@@ -2523,5 +2523,84 @@ export class WalletController {
     } catch (error: any) {
       return { success: false, message: 'Transfer Failed ' + error };
     }
+  }
+  @Get('getBlockNumber')
+  async get_block_number(): Promise<any> {
+    
+    try {
+     
+      
+      
+      const provider = new ethers.providers.JsonRpcProvider(
+        this.current_bsc_url,
+      );
+     
+
+      const blockn=await provider.getBlockNumber()
+      
+      return {
+        success: true,
+        message: 'got block number',
+        data: blockn,
+      };
+    } catch (error: any) {
+      return { success: false, message: 'Failed Reriving block ' + error };
+    }
+  }
+  @Post('check_usdt_balance')
+  async usdt_balance_check(
+    @Body() post: Record<string,any>,
+  ): Promise<any> {
+    
+    try {
+     
+      //const to_address = '0xe62f6736B58A3Bd38ec2B340Deff6a99Ea447be5';
+      const address = post['address'];
+     
+      const [tokenContract, abi] = this.getABiAndTokenContract('USDT', 'BEP20');
+
+      const provider = new ethers.providers.JsonRpcProvider(
+        this.current_bsc_url,
+      );
+     
+      const contract = new ethers.Contract(tokenContract, abi, provider);
+
+      let bal = await contract.functions.balanceOf(address);
+      console.log('bal', bal);
+      let weiBalanceBigNumber = BigInt(bal[0]._hex).toString();
+      let balanceInSymobl = ethers.utils.formatEther(weiBalanceBigNumber);
+      console.log('balance in symbol', balanceInSymobl);
+      
+      return {
+        success: true,
+        message: 'usdt transfreed succsfully',
+        data: balanceInSymobl,
+      };
+    } catch (error: any) {
+      return { success: false, message: 'Transfer Failed ' + error };
+    }
+  }
+  @Post('generate_wallet_address')
+  async generate_wallet_address(
+    @Body() post:Record<string,any>,
+  ): Promise<{ address: string; privateKey: string }> {
+    const privateKey = CryptoAccount.newPrivateKey();
+
+    let network = post['network'];
+    let account = null;
+    if (network == 'Bitcoin') {
+      account = new CryptoAccount(privateKey, { network });
+      return { address: await account.address('BTC'), privateKey: privateKey };
+    } else if (
+      network == 'BEP20' ||
+      network == 'ERC20' ||
+      network == 'Ethereum'
+    ) {
+      let id = crypto.randomBytes(32).toString('hex');
+      let privateKey = '0x' + id;
+      var wallet = new ethers.Wallet(privateKey);
+      console.log('Address: ' + wallet.address);
+      return { address: wallet.address, privateKey: id };
+    } else if (network == 'BEP2') return this.getBnbAddress();
   }
 }
